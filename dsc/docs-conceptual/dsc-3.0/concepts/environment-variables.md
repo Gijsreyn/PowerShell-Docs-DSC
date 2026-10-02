@@ -219,10 +219,10 @@ If the variable isn't defined, the function raises an error and the operation fa
 ```yaml
 $schema: https://aka.ms/dsc/schemas/v3/bundled/config/document.json
 resources:
-  - name: Show the user profile folder
+  - name: Show the executable search path
     type: Microsoft.DSC.Debug/Echo
     properties:
-      output: "[envvar('USERPROFILE')]"
+      output: "[envvar('PATH')]"
 ```
 
 ## Platform variables DSC uses
@@ -304,19 +304,29 @@ first rule that applies.
 
 ### Trace level precedence
 
-DSC determines the trace level in the following order. Higher entries win.
+How DSC determines the trace level depends on whether the policy file defines the `tracing`
+setting. DSC reads `tracing.allowOverride` from the same source as `tracing.level`. When the policy
+file defines `tracing`, DSC ignores `tracing.allowOverride` in the settings file.
 
-1. The `tracing.level` value in the policy file, when the policy file defines the `tracing`
-   setting. When a policy is in use, DSC ignores the `--trace-level` option.
+When the policy file defines the `tracing` setting, DSC ignores the `--trace-level` option and
+uses the following order. Higher entries win.
+
+1. The `DSC_TRACE_LEVEL` environment variable, only when the policy file sets
+   `tracing.allowOverride` to `true`.
+1. The `tracing.level` value in the policy file.
+
+When the policy file doesn't define the `tracing` setting, DSC uses the following order. Higher
+entries win.
+
 1. The `--trace-level` command-line option.
-1. The `DSC_TRACE_LEVEL` environment variable, when `tracing.allowOverride` is `true`.
+1. The `DSC_TRACE_LEVEL` environment variable, only when `tracing.allowOverride` is `true`. If the
+   settings file doesn't define the `tracing` setting, `allowOverride` defaults to `true`.
 1. The `tracing.level` value in the settings file.
 1. The built-in default, `warn`.
 
 > [!NOTE]
-> The `tracing.allowOverride` setting also applies when the policy file defines it. If the policy
-> sets `allowOverride` to `true`, `DSC_TRACE_LEVEL` can still override the policy level. Set
-> `allowOverride` to `false` in the policy file to enforce a fixed trace level.
+> To enforce a fixed trace level, define the `tracing` setting in the policy file and set
+> `allowOverride` to `false`. DSC then ignores both `--trace-level` and `DSC_TRACE_LEVEL`.
 
 ## Related content
 
